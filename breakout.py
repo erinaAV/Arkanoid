@@ -1,5 +1,6 @@
 import pygame
 import os
+import sys
 import random
 
 
@@ -15,11 +16,66 @@ clock = pygame.time.Clock()
 
 def terminate():
     pygame.quit()
+    sys.exit()
+    
+    
+def game():
+    global all_sprites, brickes, paddle_group, paddle, main_ball
+    all_sprites = pygame.sprite.Group()
+    brickes = pygame.sprite.Group()
+    paddle_group = pygame.sprite.Group()
+    #brickes.add(all_sprites)
+    
+    # создаем и рисуем спрайты
+    for i in range(0, 594, 54):
+        for j in range(0, 200, 25):
+            Brick(brickes, (i, j))
+    paddle = Paddle()
+    
+    main_ball = Ball(295, 500, 10, 1)
+    all_sprites.draw(screen)
+    brickes.draw(screen)
+    pygame.display.update()
+    
+    
+    p_moving_r = False
+    p_moving_l = False
+        
+    
+    running = True
+    while True:
+        screen.fill((255, 255, 225))
+        all_sprites.draw(screen)
+        pygame.display.update()    
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.MOUSEMOTION:
+                pass
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    p_moving_l = True
+                if event.key == pygame.K_RIGHT:
+                    p_moving_r = True
+            else:
+                p_moving_l = False
+                p_moving_r = False
+                    
+        if p_moving_r:
+            paddle.move_right()
+        if p_moving_l:
+            paddle.move_left()
+            
+        all_sprites.draw(screen)
+        all_sprites.update()
+        #pygame.display.update()    
+        clock.tick(60)
     
     
 def start_game():
-    text = ['ПРАВИЛА ИГРЫ:', 'Для победы необходимо разбить стену,', 'состоящую из блоков,',
-            'отражая ракеткой шарик.', 'Вы проиграли, если шарик улетел вниз.', ' ',
+    text = ['ПРАВИЛА ИГРЫ:', 'Для победы необходимо разбить стену,',
+            'состоящую из блоков,', 'отражая ракеткой шарик.',
+            'Вы проиграли, если шарик улетел вниз.', ' ',
             'Нажмите пробел, чтобы начать игру.']
     
     screen.fill((255, 255, 225))
@@ -33,6 +89,7 @@ def start_game():
         intro_rect.x = 10
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
+        pygame.display.update() 
         
     while True:
         for event in pygame.event.get():
@@ -40,8 +97,35 @@ def start_game():
                 terminate()
             elif event.type == pygame.KEYDOWN or \
                 event.type == pygame.MOUSEBUTTONDOWN:
+                game()
                 return  # начинаем игру
-        pygame.display.update()      
+            
+def losing():
+    text = ['ВЫ ПРОИГРАЛИ :c', '', 'Нажмите пробел, если хотите',
+            'начать заново']
+    
+    screen.fill((255, 255, 225))
+    font = pygame.font.Font(None, 30)
+    text_coord = 150   
+    for line in text:
+        string_rendered = font.render(line, 1, pygame.Color('black'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 10
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+        pygame.display.update() 
+        
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or \
+                event.type == pygame.MOUSEBUTTONDOWN:
+                game()
+                return  # начинаем игру
+    
     
 
 class Brick(pygame.sprite.Sprite):
@@ -86,27 +170,25 @@ class Ball(pygame.sprite.Sprite):
         self.rect = self.rect.move(self.vx, self.vy)
         self.x = self.rect.topright[0]
         self.y = self.rect.topright[1]        
-        #if pygame.sprite.spritecollideany(self, horizontal_borders):
-            #self.vy = -self.vy
-        #if pygame.sprite.spritecollideany(self, vertical_borders):
-            #self.vx = -self.vx
+            
         # столкновение с кирпичиками
         if pygame.sprite.spritecollideany(self, brickes):
-                self.vx = self.vx 
-                self.vy = -self.vy
-                print('brick')
+            self.vx = self.vx 
+            self.vy = -self.vy
+            print('brick')
+            
         # столкновение с доской
         if pygame.sprite.spritecollideany(self, paddle_group):
-                self.vx = self.vx 
-                self.vy = -self.vy
-                print('paddle')
+            self.vx = self.vx 
+            self.vy = -self.vy
+            print('paddle')
+            
         # столкновение с границами игрового поля
-        #print(self.radius, self.rect.topright, width, height)
+        if self.y > height:
+            losing()        
         if not (self.radius <= self.x <= width):
             self.vx = -self.vx
-            print('pole')
-        #if self.radius <= self.y >= height:
-            #self.vy = -self.vy        
+            print('pole')          
 
 
 class Paddle(pygame.sprite.Sprite):
@@ -120,70 +202,10 @@ class Paddle(pygame.sprite.Sprite):
         
     def move_right(self):
         if self.rect.topleft[0] + 100 < width:
-            #self.rect.topright = (self.rect.topright[0] + 5, self.rect.topright[1])
             self.rect.move_ip(5, 0)
                   
     def move_left(self):
         if self.rect.topleft[0] > 0:
-            #self.rect.topright = (self.rect.topright[0] - 5, self.rect.topright[1])
             self.rect.move_ip(-5, 0)
-
-# вылетел ли шарик за края поля
-def ball_fly_out(ball, coords):
-    x = coords[0]
-    y = coords[1]
-    if 0 <= x >= width:
-        ball.vx = -ball.vx
-    if 0 <= y >= heigth:
-        ball.vy = -ball.vy
     
 start_game()
-
-all_sprites = pygame.sprite.Group()
-brickes = pygame.sprite.Group()
-paddle_group = pygame.sprite.Group()
-brickes.add(all_sprites)
-
-# создаем и рисуем спрайты
-for i in range(0, 594, 54):
-    for j in range(0, 200, 25):
-        Brick(brickes, (i, j))
-paddle = Paddle()
-
-main_ball = Ball(400, 400, 10, 1)
-all_sprites.draw(screen)
-pygame.display.update()
-
-
-p_moving_r = False
-p_moving_l = False
-    
-
-running = True
-while running:
-    screen.fill((255, 255, 225))
-    all_sprites.draw(screen)
-    pygame.display.update()    
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.MOUSEMOTION:
-            pass
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT:
-                p_moving_l = True
-            if event.key == pygame.K_RIGHT:
-                p_moving_r = True
-        else:
-            p_moving_l = False
-            p_moving_r = False
-                
-    if p_moving_r:
-        paddle.move_right()
-    if p_moving_l:
-        paddle.move_left()
-        
-    all_sprites.draw(screen)
-    all_sprites.update()
-    pygame.display.update()    
-    clock.tick(60)
