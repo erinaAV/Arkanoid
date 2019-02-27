@@ -48,8 +48,8 @@ def win():
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
-                elif event.type == pygame.KEYDOWN or \
-                    event.type == pygame.MOUSEBUTTONDOWN:        
+                elif (event.type == pygame.KEYDOWN) or (event.type ==
+                                                        pygame.MOUSEBUTTONDOWN):        
                     game()
                     return
         
@@ -131,8 +131,8 @@ def start_game():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.KEYDOWN or \
-                event.type == pygame.MOUSEBUTTONDOWN:
+            elif (event.type == pygame.KEYDOWN) or (event.type ==
+                                                    pygame.MOUSEBUTTONDOWN):
                 game()
                 return
             
@@ -158,8 +158,8 @@ def losing():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.KEYDOWN or \
-                event.type == pygame.MOUSEBUTTONDOWN:
+            elif (event.type == pygame.KEYDOWN) or (event.type ==
+                                                    pygame.MOUSEBUTTONDOWN):
                 game()
                 return
             
