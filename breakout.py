@@ -1,5 +1,4 @@
 import pygame
-import os
 import sys
 import random
 
@@ -7,7 +6,9 @@ import random
 '''Игра Breakout
 ПРАВИЛА:
   -для победы необходимо разбить все кирпичи
+  -кирпичи обладают разной прочностью (в зависимости от цвета)
   -отбивайте шарик ракеткой
+  -управление клавишами навигации
   -вы проиграли, если шарик упал вниз за пределы поля
   '''
 
@@ -17,14 +18,75 @@ pygame.init()
 size = width, height = 590, 600
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
+im_sprite = pygame.sprite.Group()
+
+# фоновая музыка
+pygame.mixer.music.load('m1.mp3')
+pygame.mixer.music.play(-1, 0.0)
 
 
+# выход из игры
 def terminate():
     pygame.quit()
     sys.exit()
     
     
-#меню при победе
+# загрузка изображений 
+def load_image(name, colorkey=None):
+    print(name)
+    try:
+        image = pygame.image.load(name)
+    except pygame.error as message:
+        print('Cannot load image:', name)
+        raise SystemExit(message)
+    image = image.convert_alpha()
+
+    if colorkey is not None:
+        if colorkey is -1:
+            colorkey = image.get_at((0, 0))
+        image.set_colorkey(colorkey)
+    return image
+
+    
+# заставка
+def screen_saver():
+    global all_sprites, im_sprite
+    
+    text = ['B', 'R', 'E', 'A', 'K', 'O', 'U', 'T'] 
+    screen.fill((0, 0, 250))
+    
+    background_im = load_image('sky.jpg')
+    background = pygame.sprite.Sprite(im_sprite)
+    background.image = background_im
+    background.rect = background.image.get_rect()
+    background.rect.topleft = (0, -600)
+    bg_move = True
+    
+    font = pygame.font.Font(None, 30)
+    i = 0
+    p = 30
+    ct = 20
+    text_coord = 20
+    pygame.display.update()    
+        
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+                
+        # выезжающий фон
+        if background.rect.topleft == (0, 0):
+            start_game()
+        if bg_move:
+            background.rect.move_ip(0, 10)
+        clock.tick(ct)
+        im_sprite.draw(screen)
+        pygame.display.update()
+    background.kill()
+    start_game()    
+    
+    
+# проверка и экран при победе
 def win():
     f = False
     for i in brickes:
@@ -50,12 +112,13 @@ def win():
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
-                elif (event.type == pygame.KEYDOWN) or (event.type ==
-                                                        pygame.MOUSEBUTTONDOWN):        
-                    game()
-                    return
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:            
+                        game()
+                        return                
         
-    
+   
+# процесс игры 
 def game():
     global all_sprites, brickes, paddle_group, paddle, main_ball, balls
     
@@ -109,7 +172,8 @@ def game():
         win() 
         clock.tick(60)
     
-    
+
+# экран начала игры 
 def start_game():
     text = ['ПРАВИЛА ИГРЫ:', 'Для победы необходимо разбить стену,',
             'состоящую из блоков,', 'отражая ракеткой шарик.',
@@ -133,12 +197,13 @@ def start_game():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif (event.type == pygame.KEYDOWN) or (event.type ==
-                                                    pygame.MOUSEBUTTONDOWN):
-                game()
-                return
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:            
+                    game()
+                    return
             
-            
+
+# экран при проигрыше         
 def losing():
     text = ['ВЫ ПРОИГРАЛИ :c', '', 'Нажмите пробел, если хотите',
             'начать заново']
@@ -160,12 +225,13 @@ def losing():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif (event.type == pygame.KEYDOWN) or (event.type ==
-                                                    pygame.MOUSEBUTTONDOWN):
-                game()
-                return
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:            
+                    game()
+                    return            
             
 
+# кирпичики
 class Brick(pygame.sprite.Sprite):
     def __init__(self, group, coords):
         super().__init__(all_sprites)
@@ -193,6 +259,7 @@ class Brick(pygame.sprite.Sprite):
             self.image.fill(self.color)
             
 
+# шарик
 class Ball(pygame.sprite.Sprite):
     def __init__(self, x, y, radius, demage):
         super().__init__(all_sprites)     
@@ -234,6 +301,7 @@ class Ball(pygame.sprite.Sprite):
             self.vy = -self.vy
 
 
+# ракетка
 class Paddle(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites)
@@ -252,4 +320,4 @@ class Paddle(pygame.sprite.Sprite):
             self.rect.move_ip(-5, 0)
     
     
-start_game()
+screen_saver()
